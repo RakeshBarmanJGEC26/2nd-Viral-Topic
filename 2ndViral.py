@@ -15,8 +15,8 @@ YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 # ==============================
 # Streamlit App
 # ==============================
-st.set_page_config(page_title="YouTube Viral Long-Form (USA / EN)", layout="wide")
-st.title("🔥 Viral Long-Form YouTube Videos (USA • English Only)")
+st.set_page_config(page_title="YouTube Viral Long-Form (EN)", layout="wide")
+st.title("🔥 Viral Long-Form YouTube Videos (English Bias)")
 
 days = st.number_input("Search videos from last N days:", min_value=1, max_value=60, value=5)
 
@@ -66,8 +66,7 @@ if st.button("🚀 Fetch Viral Videos"):
                 "order": "viewCount",
                 "publishedAfter": start_date,
                 "maxResults": 5,
-                "relevanceLanguage": "en",   # 🔥 English bias
-                "regionCode": "US",          # 🔥 USA targeting
+                "relevanceLanguage": "en",  # ✅ ONLY English bias
                 "key": API_KEY
             }
 
@@ -81,7 +80,7 @@ if st.button("🚀 Fetch Viral Videos"):
 
             # Video details
             video_params = {
-                "part": "statistics,contentDetails,snippet",
+                "part": "statistics,contentDetails",
                 "id": ",".join(video_ids),
                 "key": API_KEY
             }
@@ -99,13 +98,6 @@ if st.button("🚀 Fetch Viral Videos"):
                 continue
 
             for vid, vdata, cdata in zip(videos, video_data["items"], channel_data["items"]):
-
-                # 🔥 LANGUAGE FILTER (ENGLISH ONLY)
-                lang = vdata["snippet"].get("defaultLanguage")
-                audio_lang = vdata["snippet"].get("defaultAudioLanguage")
-
-                if lang != "en" and audio_lang != "en":
-                    continue
 
                 # 🔥 LONG-FORM FILTER (> 2 min)
                 duration_seconds = duration_to_seconds(vdata["contentDetails"]["duration"])
@@ -127,7 +119,7 @@ if st.button("🚀 Fetch Viral Videos"):
         all_results = sorted(all_results, key=lambda x: x["Views"], reverse=True)
 
         if all_results:
-            st.success(f"🔥 Found {len(all_results)} ENGLISH long-form viral videos (USA)")
+            st.success(f"🔥 Found {len(all_results)} long-form videos (English bias)")
             for r in all_results:
                 st.markdown(
                     f"### {r['Title']}\n"
@@ -138,7 +130,7 @@ if st.button("🚀 Fetch Viral Videos"):
                 )
                 st.write("---")
         else:
-            st.warning("❌ No English long-form videos found.")
+            st.warning("❌ No long-form videos found.")
 
     except Exception as e:
         st.error(f"⚠️ Error: {e}")
