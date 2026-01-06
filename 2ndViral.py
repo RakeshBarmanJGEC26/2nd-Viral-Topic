@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-from datetime import datetime, timedelta
 import re
 
 # ==============================
@@ -8,22 +7,15 @@ import re
 # ==============================
 API_KEY = "AIzaSyCC_B5qrb2wibpaNIKtIHqUKv4VXqe0tnw"
 
-YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
-YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
-YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
+SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
+VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
+CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 
 # ==============================
 # Streamlit App
 # ==============================
-st.set_page_config(page_title="YouTube Viral Long-Form Finder", layout="wide")
-st.title("🔥 Viral Long-Form YouTube Videos (English Bias)")
-
-days = st.number_input(
-    "Search videos from last N days:",
-    min_value=1,
-    max_value=60,
-    value=10
-)
+st.set_page_config(page_title="YouTube Long-Form Finder", layout="wide")
+st.title("🔥 Long-Form Viral YouTube Videos (English Bias)")
 
 # Keywords
 keywords = [
@@ -32,34 +24,28 @@ keywords = [
     "true scary stories",
     "scary story compilation",
     "night horror stories",
-    "home alone horror stories",
     "airbnb horror stories",
     "hotel horror stories",
     "camping true horror stories",
-    "disturbing encounters",
-    "chilling true stories"
+    "disturbing true stories"
 ]
 
 # ==============================
-# ISO 8601 Duration Converter
+# Duration Converter
 # ==============================
 def duration_to_seconds(duration):
-    pattern = re.compile(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?')
-    match = pattern.match(duration)
-
-    hours = int(match.group(1)) if match.group(1) else 0
-    minutes = int(match.group(2)) if match.group(2) else 0
-    seconds = int(match.group(3)) if match.group(3) else 0
-
-    return hours * 3600 + minutes * 60 + seconds
+    match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', duration)
+    h = int(match.group(1)) if match.group(1) else 0
+    m = int(match.group(2)) if match.group(2) else 0
+    s = int(match.group(3)) if match.group(3) else 0
+    return h * 3600 + m * 60 + s
 
 # ==============================
 # Fetch Button
 # ==============================
-if st.button("🚀 Fetch Viral Videos"):
+if st.button("🚀 Fetch Long-Form Videos"):
     try:
-        start_date = (datetime.utcnow() - timedelta(days=int(days))).isoformat("T") + "Z"
-        all_results = []
+        results = []
 
         for keyword in keywords:
             st.write(f"🔍 Searching: **{keyword}**")
@@ -68,67 +54,60 @@ if st.button("🚀 Fetch Viral Videos"):
                 "part": "snippet",
                 "q": keyword,
                 "type": "video",
-                "order": "relevance",      # 🔥 FIX
-                "publishedAfter": start_date,
-                "maxResults": 25,          # 🔥 FIX
-                "relevanceLanguage": "en", # English bias only
+                "order": "viewCount",       # 🔥 Works better without date
+                "maxResults": 25,
+                "relevanceLanguage": "en",  # ✅ English bias ONLY
                 "key": API_KEY
             }
 
-            data = requests.get(YOUTUBE_SEARCH_URL, params=search_params).json()
-            if "items" not in data or not data["items"]:
+            search_data = requests.get(SEARCH_URL, params=search_params).json()
+            if "items" not in search_data:
                 continue
 
-            videos = data["items"]
-            video_ids = [v["id"]["videoId"] for v in videos]
-            channel_ids = [v["snippet"]["channelId"] for v in videos]
+            video_ids = [i["id"]["videoId"] for i in search_data["items"]]
+            channel_ids = [i["snippet"]["channelId"] for i in search_data["items"]]
 
-            # Video details
-            video_params = {
-                "part": "statistics,contentDetails",
-                "id": ",".join(video_ids),
-                "key": API_KEY
-            }
-            video_data = requests.get(YOUTUBE_VIDEO_URL, params=video_params).json()
+            video_data = requests.get(
+                VIDEO_URL,
+                params={
+                    "part": "contentDetails,statistics",
+                    "id": ",".join(video_ids),
+                    "key": API_KEY
+                }
+            ).json()
 
-            # Channel details
-            channel_params = {
-                "part": "statistics",
-                "id": ",".join(channel_ids),
-                "key": API_KEY
-            }
-            channel_data = requests.get(YOUTUBE_CHANNEL_URL, params=channel_params).json()
+            channel_data = requests.get(
+                CHANNEL_URL,
+                params={
+                    "part": "statistics",
+                    "id": ",".join(channel_ids),
+                    "key": API_KEY
+                }
+            ).json()
 
-            if "items" not in video_data or "items" not in channel_data:
-                continue
+            for i in range(min(len(video_data["items"]), len(channel_data["items"]))):
+                v = video_data["items"][i]
+                c = channel_data["items"][i]
 
-            for vid, vdata, cdata in zip(videos, video_data["items"], channel_data["items"]):
+                duration_sec = duration_to_seconds(v["contentDetails"]["duration"])
 
-                duration_seconds = duration_to_seconds(
-                    vdata["contentDetails"]["duration"]
-                )
-
-                # 🔥 LONG-FORM FILTER (> 2 MIN)
-                if duration_seconds < 120:
+                # ✅ LONG-FORM ONLY
+                if duration_sec < 120:
                     continue
 
-                views = int(vdata["statistics"].get("viewCount", 0))
-                subs = int(cdata["statistics"].get("subscriberCount", 0))
-
-                all_results.append({
-                    "Title": vid["snippet"]["title"],
-                    "URL": f"https://www.youtube.com/watch?v={vid['id']['videoId']}",
-                    "Views": views,
-                    "Subscribers": subs,
-                    "Duration (min)": round(duration_seconds / 60, 2)
+                results.append({
+                    "Title": search_data["items"][i]["snippet"]["title"],
+                    "URL": f"https://www.youtube.com/watch?v={video_ids[i]}",
+                    "Views": int(v["statistics"].get("viewCount", 0)),
+                    "Subscribers": int(c["statistics"].get("subscriberCount", 0)),
+                    "Duration (min)": round(duration_sec / 60, 2)
                 })
 
-        # Sort by views (viral first)
-        all_results = sorted(all_results, key=lambda x: x["Views"], reverse=True)
+        results = sorted(results, key=lambda x: x["Views"], reverse=True)
 
-        if all_results:
-            st.success(f"🔥 Found {len(all_results)} long-form videos")
-            for r in all_results:
+        if results:
+            st.success(f"🔥 Found {len(results)} long-form videos")
+            for r in results:
                 st.markdown(
                     f"### {r['Title']}\n"
                     f"🕒 **Duration:** {r['Duration (min)']} min  \n"
@@ -138,7 +117,7 @@ if st.button("🚀 Fetch Viral Videos"):
                 )
                 st.write("---")
         else:
-            st.warning("❌ No long-form videos found.")
+            st.warning("❌ No long-form videos found (very rare now).")
 
     except Exception as e:
-        st.error(f"⚠️ Error: {e}")
+        st.error(f"Error: {e}")
