@@ -18,26 +18,7 @@ days = st.number_input("Enter Days to Search (1-30):", min_value=1, max_value=60
 
 # Keywords
 keywords = [
-    "true horror stories usa",
-    "american horror stories",
-    "real scary stories usa",
-    "true scary stories american",
-    "real life horror stories usa",
-    "scary stories to fall asleep to",
-    "horror story narration",
-    "american ghost stories",
-    "real ghost stories usa",
-    "paranormal encounters usa",
-    "true paranormal stories america",
-    "unsolved mysteries usa horror",
-    "american urban legends",
-    "creepy true stories usa",
-    "night horror stories usa",
-    "scary stories narrated",
-    "true crime horror usa",
-    "home invasion horror stories usa",
-    "real encounters horror usa",
-    "terrifying true stories america"
+    "scary stories","horror stories","8 Most Disturbing Things Caught on Doorbell Camera Footage","Chilling Scares","disturbing forest encounters","real forest horror stories","10 scary stories","true scary stories","night horror stories","scary story compilation","true nighttime horror stories","home alone horror stories","airbnb horror stories","hotel horror stories","night car drive horror stories","night drive scary stories","halloween horror stories","food delivery horror stories","camping true horror stories"
 ]
 
 # Convert ISO 8601 duration to seconds
