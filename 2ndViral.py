@@ -15,8 +15,8 @@ YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 # ==============================
 # Streamlit App
 # ==============================
-st.set_page_config(page_title="YouTube Viral Long-Form Finder", layout="wide")
-st.title("🔥 YouTube Viral Long-Form Videos Finder")
+st.set_page_config(page_title="YouTube Viral Long-Form (USA / EN)", layout="wide")
+st.title("🔥 Viral Long-Form YouTube Videos (USA • English Only)")
 
 days = st.number_input("Search videos from last N days:", min_value=1, max_value=60, value=5)
 
@@ -24,23 +24,15 @@ days = st.number_input("Search videos from last N days:", min_value=1, max_value
 keywords = [
     "scary stories",
     "horror stories",
-    "8 Most Disturbing Things Caught on Doorbell Camera Footage",
-    "Chilling Scares",
-    "disturbing forest encounters",
-    "real forest horror stories",
-    "10 scary stories",
     "true scary stories",
-    "night horror stories",
     "scary story compilation",
-    "true nighttime horror stories",
+    "night horror stories",
     "home alone horror stories",
     "airbnb horror stories",
     "hotel horror stories",
-    "night car drive horror stories",
-    "night drive scary stories",
-    "halloween horror stories",
-    "food delivery horror stories",
-    "camping true horror stories"
+    "camping true horror stories",
+    "disturbing encounters",
+    "chilling true stories"
 ]
 
 # ==============================
@@ -59,7 +51,7 @@ def duration_to_seconds(duration):
 # ==============================
 # Fetch Button
 # ==============================
-if st.button("🚀 Fetch Viral Long-Form Videos"):
+if st.button("🚀 Fetch Viral Videos"):
     try:
         start_date = (datetime.utcnow() - timedelta(days=int(days))).isoformat("T") + "Z"
         all_results = []
@@ -74,12 +66,12 @@ if st.button("🚀 Fetch Viral Long-Form Videos"):
                 "order": "viewCount",
                 "publishedAfter": start_date,
                 "maxResults": 5,
+                "relevanceLanguage": "en",   # 🔥 English bias
+                "regionCode": "US",          # 🔥 USA targeting
                 "key": API_KEY
             }
 
-            response = requests.get(YOUTUBE_SEARCH_URL, params=search_params)
-            data = response.json()
-
+            data = requests.get(YOUTUBE_SEARCH_URL, params=search_params).json()
             if "items" not in data or not data["items"]:
                 continue
 
@@ -89,7 +81,7 @@ if st.button("🚀 Fetch Viral Long-Form Videos"):
 
             # Video details
             video_params = {
-                "part": "statistics,contentDetails",
+                "part": "statistics,contentDetails,snippet",
                 "id": ",".join(video_ids),
                 "key": API_KEY
             }
@@ -108,10 +100,15 @@ if st.button("🚀 Fetch Viral Long-Form Videos"):
 
             for vid, vdata, cdata in zip(videos, video_data["items"], channel_data["items"]):
 
-                duration = vdata["contentDetails"]["duration"]
-                duration_seconds = duration_to_seconds(duration)
+                # 🔥 LANGUAGE FILTER (ENGLISH ONLY)
+                lang = vdata["snippet"].get("defaultLanguage")
+                audio_lang = vdata["snippet"].get("defaultAudioLanguage")
 
-                # 🔥 LONG-FORM FILTER (> 2 MIN)
+                if lang != "en" and audio_lang != "en":
+                    continue
+
+                # 🔥 LONG-FORM FILTER (> 2 min)
+                duration_seconds = duration_to_seconds(vdata["contentDetails"]["duration"])
                 if duration_seconds < 120:
                     continue
 
@@ -120,7 +117,6 @@ if st.button("🚀 Fetch Viral Long-Form Videos"):
 
                 all_results.append({
                     "Title": vid["snippet"]["title"],
-                    "Description": vid["snippet"]["description"][:200],
                     "URL": f"https://www.youtube.com/watch?v={vid['id']['videoId']}",
                     "Views": views,
                     "Subscribers": subs,
@@ -131,19 +127,18 @@ if st.button("🚀 Fetch Viral Long-Form Videos"):
         all_results = sorted(all_results, key=lambda x: x["Views"], reverse=True)
 
         if all_results:
-            st.success(f"🔥 Found {len(all_results)} LONG-FORM viral videos")
-
+            st.success(f"🔥 Found {len(all_results)} ENGLISH long-form viral videos (USA)")
             for r in all_results:
                 st.markdown(
                     f"### {r['Title']}\n"
                     f"🕒 **Duration:** {r['Duration (min)']} min  \n"
                     f"👁 **Views:** {r['Views']:,}  \n"
                     f"👥 **Subscribers:** {r['Subscribers']:,}  \n"
-                    f"🔗 **Link:** [Watch Video]({r['URL']})"
+                    f"🔗 [Watch Video]({r['URL']})"
                 )
                 st.write("---")
         else:
-            st.warning("❌ No long-form viral videos found.")
+            st.warning("❌ No English long-form videos found.")
 
     except Exception as e:
         st.error(f"⚠️ Error: {e}")
