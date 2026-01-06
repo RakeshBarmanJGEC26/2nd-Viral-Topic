@@ -17,7 +17,6 @@ CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 st.set_page_config(page_title="YouTube Long-Form Finder", layout="wide")
 st.title("🔥 Long-Form Viral YouTube Videos (English Bias)")
 
-# Keywords
 keywords = [
     "scary stories",
     "horror stories",
@@ -50,18 +49,20 @@ if st.button("🚀 Fetch Long-Form Videos"):
         for keyword in keywords:
             st.write(f"🔍 Searching: **{keyword}**")
 
+            # 🔥 KEY FIX IS HERE
             search_params = {
                 "part": "snippet",
                 "q": keyword,
                 "type": "video",
-                "order": "viewCount",       # 🔥 Works better without date
+                "order": "viewCount",
+                "videoDuration": "long",     # ✅ THIS SOLVES EVERYTHING
                 "maxResults": 25,
-                "relevanceLanguage": "en",  # ✅ English bias ONLY
+                "relevanceLanguage": "en",
                 "key": API_KEY
             }
 
             search_data = requests.get(SEARCH_URL, params=search_params).json()
-            if "items" not in search_data:
+            if "items" not in search_data or not search_data["items"]:
                 continue
 
             video_ids = [i["id"]["videoId"] for i in search_data["items"]]
@@ -91,7 +92,7 @@ if st.button("🚀 Fetch Long-Form Videos"):
 
                 duration_sec = duration_to_seconds(v["contentDetails"]["duration"])
 
-                # ✅ LONG-FORM ONLY
+                # Extra safety (optional)
                 if duration_sec < 120:
                     continue
 
@@ -106,7 +107,7 @@ if st.button("🚀 Fetch Long-Form Videos"):
         results = sorted(results, key=lambda x: x["Views"], reverse=True)
 
         if results:
-            st.success(f"🔥 Found {len(results)} long-form videos")
+            st.success(f"🔥 Found {len(results)} LONG-FORM videos")
             for r in results:
                 st.markdown(
                     f"### {r['Title']}\n"
@@ -117,7 +118,7 @@ if st.button("🚀 Fetch Long-Form Videos"):
                 )
                 st.write("---")
         else:
-            st.warning("❌ No long-form videos found (very rare now).")
+            st.warning("❌ No long-form videos found.")
 
     except Exception as e:
         st.error(f"Error: {e}")
