@@ -92,7 +92,7 @@ if st.button("Fetch Data"):
                     continue
 
                 subs = int(cdata["statistics"].get("subscriberCount", 0))
-                if subs >= 3000000:
+                if subs >= 300:
                     continue
 
                 views = int(vdata["statistics"].get("viewCount", 0))
