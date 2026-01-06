@@ -15,10 +15,15 @@ YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 # ==============================
 # Streamlit App
 # ==============================
-st.set_page_config(page_title="YouTube Viral Long-Form (EN)", layout="wide")
+st.set_page_config(page_title="YouTube Viral Long-Form Finder", layout="wide")
 st.title("🔥 Viral Long-Form YouTube Videos (English Bias)")
 
-days = st.number_input("Search videos from last N days:", min_value=1, max_value=60, value=5)
+days = st.number_input(
+    "Search videos from last N days:",
+    min_value=1,
+    max_value=60,
+    value=10
+)
 
 # Keywords
 keywords = [
@@ -63,10 +68,10 @@ if st.button("🚀 Fetch Viral Videos"):
                 "part": "snippet",
                 "q": keyword,
                 "type": "video",
-                "order": "viewCount",
+                "order": "relevance",      # 🔥 FIX
                 "publishedAfter": start_date,
-                "maxResults": 5,
-                "relevanceLanguage": "en",  # ✅ ONLY English bias
+                "maxResults": 25,          # 🔥 FIX
+                "relevanceLanguage": "en", # English bias only
                 "key": API_KEY
             }
 
@@ -99,8 +104,11 @@ if st.button("🚀 Fetch Viral Videos"):
 
             for vid, vdata, cdata in zip(videos, video_data["items"], channel_data["items"]):
 
-                # 🔥 LONG-FORM FILTER (> 2 min)
-                duration_seconds = duration_to_seconds(vdata["contentDetails"]["duration"])
+                duration_seconds = duration_to_seconds(
+                    vdata["contentDetails"]["duration"]
+                )
+
+                # 🔥 LONG-FORM FILTER (> 2 MIN)
                 if duration_seconds < 120:
                     continue
 
@@ -119,7 +127,7 @@ if st.button("🚀 Fetch Viral Videos"):
         all_results = sorted(all_results, key=lambda x: x["Views"], reverse=True)
 
         if all_results:
-            st.success(f"🔥 Found {len(all_results)} long-form videos (English bias)")
+            st.success(f"🔥 Found {len(all_results)} long-form videos")
             for r in all_results:
                 st.markdown(
                     f"### {r['Title']}\n"
