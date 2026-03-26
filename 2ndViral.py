@@ -17,9 +17,9 @@ YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 # ==============================
 st.set_page_config(page_title="Viral Horror Channel Discovery", layout="wide")
 st.title("🎃 Viral Horror Channel Discovery Engine")
-st.caption("🇺🇸 USA · English Only · 18min+ · Under 10K Subs · 18K+ Views · Max 60 Days")
+st.caption("🇺🇸 USA · English Only · 18min+ · Under 10K Subs · 18K+ Views · Max 14 Days")
 
-days = st.number_input("Search from last N days:", min_value=1, max_value=60, value=14)
+days = st.number_input("Search from last N days:", min_value=1, value=14)
 
 # ==============================
 # Strategy 1 — Narrative Title Patterns
